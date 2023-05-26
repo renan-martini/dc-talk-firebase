@@ -1,7 +1,15 @@
 import Head from "next/head";
 import styles from "@/styles/Home.module.css";
+import { FirebaseService, ToDo } from "@/services/firebase/firebase.service";
+import { FormEvent, useState } from "react";
 
-export default function Home() {
+export default function Home({ todos }: { todos: ToDo[] }) {
+  const [newTodo, setNewTodo] = useState<ToDo>({ status: "to_do" } as ToDo);
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const todosX = await FirebaseService.createToDo(newTodo);
+    console.log(todosX);
+  };
   return (
     <>
       <Head>
@@ -10,7 +18,44 @@ export default function Home() {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
-      <main className={styles.main}></main>
+      <main className={styles.main}>
+        {todos.map((todo, index) => (
+          <li key={index}>{todo.title}</li>
+        ))}
+        <form action="" onSubmit={handleSubmit}>
+          <input
+            required
+            type="text"
+            placeholder="insira sua tarefa"
+            onChange={(e) => setNewTodo({ ...newTodo, title: e.target.value })}
+          />
+          <select
+            name=""
+            id=""
+            onChange={(e) =>
+              setNewTodo({
+                ...newTodo,
+                status: e.target.value as "to_do" | "done",
+              })
+            }
+          >
+            <option value="to_do">A fazer</option>
+            <option value="done">Feito</option>
+          </select>
+          <button type="submit">Criar</button>
+        </form>
+      </main>
     </>
   );
+}
+
+export async function getStaticProps() {
+  const todos = await FirebaseService.getToDos();
+
+  return {
+    props: {
+      todos,
+    },
+    revalidate: 10,
+  };
 }
